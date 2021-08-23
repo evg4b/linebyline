@@ -7,10 +7,9 @@ import (
 )
 
 type byLineWriter struct {
-	buffer          bytes.Buffer
-	trailingNewline bool
-	mu              *sync.Mutex
-	originalWriter  io.Writer
+	buffer         bytes.Buffer
+	mu             *sync.Mutex
+	originalWriter io.Writer
 }
 
 func (wr *byLineWriter) Close() error {
@@ -19,12 +18,7 @@ func (wr *byLineWriter) Close() error {
 
 func (wr *byLineWriter) Write(payload []byte) (int, error) {
 	for _, b := range payload {
-		if wr.trailingNewline {
-			wr.trailingNewline = false
-		}
-
 		if b == '\n' {
-			wr.trailingNewline = true
 			err := wr.flush()
 			if err != nil {
 				return 0, err
