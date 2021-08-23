@@ -1,4 +1,4 @@
-module evg4b/linebyline
+module github.com/evg4b/linebyline
 
 go 1.16
 
