@@ -9,10 +9,11 @@ package main
 
 import (
 	"fmt"
-	"linebyline"
 	"os"
 	"sync"
 	"time"
+
+	"github.com/evg4b/linebyline"
 )
 
 func main() {
@@ -28,18 +29,22 @@ func main() {
 	go func() {
 		defer wg.Done()
 		for i := 0; i < 50; i++ {
-			fmt.Fprintf(wr1, "[#1] first writer line %d\n", i)
-            // do something else ...
+			fmt.Fprintf(wr1, "[#1] line %d ", i)
+			// do something else ...
 			time.Sleep(10 * time.Millisecond)
+
+			fmt.Fprintln(wr1, "first writer")
 		}
 	}()
 
 	go func() {
 		defer wg.Done()
 		for i := 0; i < 50; i++ {
-			fmt.Fprintf(wr2, "[#2] second writer line %d\n", i)
-            // do something else ...
+			fmt.Fprintf(wr2, "[#2] line %d ", i)
+			// do something else ...
 			time.Sleep(20 * time.Millisecond)
+
+			fmt.Fprintln(wr2, "second writer")
 		}
 	}()
 
@@ -50,22 +55,20 @@ func main() {
 		panic(err)
 	}
 }
-
 ```
 Output: 
 ```
-[#2] second writer line 0
-[#1] first writer line 0
-[#1] first writer line 1 
-[#2] second writer line 1
-[#1] first writer line 2
-[#1] first writer line 3
-[#2] second writer line 2
-[#1] first writer line 4
-[#1] first writer line 5 
-[#2] second writer line 3
-[#1] first writer line 6
-[#1] first writer line 7 
-[#2] second writer line 4
+[#1] line 0 first writer
+[#1] line 1 first writer 
+[#2] line 0 second writer
+[#1] line 2 first writer
+[#1] line 3 first writer 
+[#2] line 1 second writer
+[#1] line 4 first writer
+[#2] line 2 second writer
+[#1] line 12 first writer
+[#1] line 13 first writer
+[#2] line 6 second writer
+[#2] line 7 second writer
 ...
 ```
