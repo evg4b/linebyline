@@ -2,9 +2,10 @@ package linebyline_test
 
 import (
 	"bytes"
-	"evg4b/linebyline"
 	"fmt"
 	"testing"
+
+	"github.com/evg4b/linebyline"
 
 	"github.com/stretchr/testify/assert"
 )
