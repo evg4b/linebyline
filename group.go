@@ -23,9 +23,8 @@ func NewWriterGroup(wr io.Writer) *WriterGroup {
 
 func (wrg *WriterGroup) CreateWriter() io.WriteCloser {
 	writer := byLineWriter{
-		originalWriter:  wrg.wr,
-		mu:              &wrg.mu,
-		trailingNewline: true,
+		originalWriter: wrg.wr,
+		mu:             &wrg.mu,
 	}
 
 	wrg.writers = append(wrg.writers, &writer)
