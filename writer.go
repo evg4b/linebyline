@@ -2,21 +2,19 @@ package linebyline
 
 import (
 	"bytes"
+	"io"
+	"sync"
 )
 
 type byLineWriter struct {
 	buffer          bytes.Buffer
-	channel         chan<- []byte
 	trailingNewline bool
+	mu              *sync.Mutex
+	originalWriter  io.Writer
 }
 
 func (wr *byLineWriter) Close() error {
-	payload := wr.buffer.Bytes()
-	if len(payload) > 0 {
-		wr.flush()
-	}
-
-	return nil
+	return wr.flush()
 }
 
 func (wr *byLineWriter) Write(payload []byte) (int, error) {
@@ -27,17 +25,37 @@ func (wr *byLineWriter) Write(payload []byte) (int, error) {
 
 		if b == '\n' {
 			wr.trailingNewline = true
-			wr.flush()
+			err := wr.flush()
+			if err != nil {
+				return 0, err
+			}
 		} else {
-			wr.buffer.WriteByte(b)
+			err := wr.buffer.WriteByte(b)
+			if err != nil {
+				return 0, err
+			}
 		}
 	}
 
 	return len(payload), nil
 }
 
-func (wr *byLineWriter) flush() {
-	_, _ = wr.buffer.WriteRune('\n')
-	wr.channel <- wr.buffer.Bytes()
-	wr.buffer.Reset()
+func (wr *byLineWriter) flush() error {
+	defer wr.buffer.Reset()
+
+	if wr.buffer.Len() > 0 {
+		_, err := wr.buffer.WriteRune('\n')
+		if err != nil {
+			return err
+		}
+
+		wr.mu.Lock()
+		defer wr.mu.Unlock()
+
+		_, err = wr.originalWriter.Write(wr.buffer.Bytes())
+
+		return err
+	}
+
+	return nil
 }

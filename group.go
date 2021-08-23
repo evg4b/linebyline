@@ -3,32 +3,28 @@ package linebyline
 import (
 	"io"
 	"sync"
+
+	"github.com/hashicorp/go-multierror"
 )
 
 type WriterGroup struct {
-	channel chan []byte
 	writers []io.WriteCloser
-	wg      *sync.WaitGroup
+	mu      sync.Mutex
+	wr      io.Writer
 }
 
 func NewWriterGroup(wr io.Writer) *WriterGroup {
-	channel := make(chan []byte)
-
-	wg := sync.WaitGroup{}
-
-	wg.Add(1)
-	go writerDeamon(&wg, channel, wr)
-
 	return &WriterGroup{
-		channel: channel,
 		writers: []io.WriteCloser{},
-		wg:      &wg,
+		wr:      wr,
+		mu:      sync.Mutex{},
 	}
 }
 
 func (wrg *WriterGroup) CreateWriter() io.WriteCloser {
 	writer := byLineWriter{
-		channel:         wrg.channel,
+		originalWriter:  wrg.wr,
+		mu:              &wrg.mu,
 		trailingNewline: true,
 	}
 
@@ -38,20 +34,13 @@ func (wrg *WriterGroup) CreateWriter() io.WriteCloser {
 }
 
 func (wrg *WriterGroup) Close() error {
+	var errors *multierror.Error
 	for _, v := range wrg.writers {
-		v.Close()
+		err := v.Close()
+		if err != nil {
+			errors = multierror.Append(errors, err)
+		}
 	}
 
-	close(wrg.channel)
-
-	wrg.wg.Wait()
-
-	return nil
-}
-
-func writerDeamon(wg *sync.WaitGroup, channel <-chan []byte, wr io.Writer) {
-	defer wg.Done()
-	for line := range channel {
-		_, _ = wr.Write(line)
-	}
+	return errors.ErrorOrNil()
 }
