@@ -3,13 +3,18 @@ package linebyline
 import (
 	"bytes"
 	"io"
-	"sync"
 )
 
 type byLineWriter struct {
-	buffer         bytes.Buffer
-	mu             *sync.Mutex
-	originalWriter io.Writer
+	buffer bytes.Buffer
+	out    io.Writer
+}
+
+func NewByLineWriter(out io.Writer) *byLineWriter {
+	return &byLineWriter{
+		buffer: bytes.Buffer{},
+		out:    out,
+	}
 }
 
 func (wr *byLineWriter) Close() error {
@@ -43,10 +48,7 @@ func (wr *byLineWriter) flush() error {
 			return err
 		}
 
-		wr.mu.Lock()
-		defer wr.mu.Unlock()
-
-		_, err = wr.originalWriter.Write(wr.buffer.Bytes())
+		_, err = io.Copy(wr.out, &wr.buffer)
 
 		return err
 	}

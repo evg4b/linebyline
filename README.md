@@ -1,9 +1,9 @@
 # Line by line writer [![Go Report Card](https://goreportcard.com/badge/github.com/evg4b/linebyline)](https://goreportcard.com/report/github.com/evg4b/linebyline)
 
-Thread-safe `io.WriterCloser` allowing you to write from different sources in one line by line. 
-Writing to the source occurs only after the `end of the line` or the `closing of the generated io.WriterCloser` or `closing the WriterGroup`.
+Thread-safe `io.WriterCloser` allowing you to write from different sources in one line by line.
+Writing to the source occurs only after the `end of the line` or the `closing of the generated io.WriterCloser`.
 
-# Example
+## Example:
 ``` GO
 package main
 
@@ -17,12 +17,11 @@ import (
 )
 
 func main() {
-	group := linebyline.NewWriterGroup(os.Stdout)
 
 	wg := sync.WaitGroup{}
 
-	wr1 := group.CreateWriter()
-	wr2 := group.CreateWriter()
+	wr1 := linebyline.NewByLineWriter(os.Stdout)
+	wr2 := linebyline.NewByLineWriter(os.Stdout)
 
 	wg.Add(2)
 
@@ -50,25 +49,46 @@ func main() {
 
 	wg.Wait()
 
-	err := group.Close()
+	err := w1.Close()
+	if err != nil {
+		panic(err)
+	}
+
+	err := w2.Close()
 	if err != nil {
 		panic(err)
 	}
 }
 ```
-Output: 
+Output:
 ```
 [#1] line 0 first writer
-[#1] line 1 first writer 
 [#2] line 0 second writer
+[#1] line 1 first writer
 [#1] line 2 first writer
-[#1] line 3 first writer 
 [#2] line 1 second writer
+[#1] line 3 first writer
 [#1] line 4 first writer
+[#1] line 5 first writer
 [#2] line 2 second writer
-[#1] line 12 first writer
-[#1] line 13 first writer
-[#2] line 6 second writer
-[#2] line 7 second writer
+[#1] line 6 first writer
+[#1] line 7 first writer
 ...
+```
+
+### For not safe writers:
+``` GO
+var writer bytes.Buffer
+safeWriter := linebyline.NewSafeWriter(&writer)
+
+wr1 := linebyline.NewByLineWriter(safeWriter)
+defer wr1.Close()
+
+wr2 := linebyline.NewByLineWriter(safeWriter)
+defer wr2.Close()
+
+fmt.Fprintln(wr1, "second writer")
+fmt.Fprintln(wr2, "second writer")
+// do something else ...
+
 ```
