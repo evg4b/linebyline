@@ -4,6 +4,7 @@ Thread-safe `io.WriterCloser` allowing you to write from different sources in on
 Writing to the source occurs only after the `end of the line` or the `closing of the generated io.WriterCloser`.
 
 ## Example:
+
 ``` GO
 package main
 
@@ -20,8 +21,12 @@ func main() {
 
 	wg := sync.WaitGroup{}
 
-	wr1 := linebyline.NewByLineWriter(os.Stdout)
-	wr2 := linebyline.NewByLineWriter(os.Stdout)
+	wr1 := linebyline.NewByLineWriter(
+	    linebyline.WithOutWriter(os.Stdout),
+	)
+	wr2 := linebyline.NewByLineWriter(
+	    linebyline.WithOutWriter(os.Stdout),
+	)
 
 	wg.Add(2)
 
@@ -60,7 +65,9 @@ func main() {
 	}
 }
 ```
+
 Output:
+
 ```
 [#1] line 0 first writer
 [#2] line 0 second writer
@@ -77,18 +84,73 @@ Output:
 ```
 
 ### For not safe writers:
+
 ``` GO
 var writer bytes.Buffer
 safeWriter := linebyline.NewSafeWriter(&writer)
 
-wr1 := linebyline.NewByLineWriter(safeWriter)
+wr1 := linebyline.NewByLineWriter(
+    linebyline.WithOutWriter(os.Stdout),
+)
 defer wr1.Close()
 
-wr2 := linebyline.NewByLineWriter(safeWriter)
+wr2 := linebyline.NewByLineWriter(
+    linebyline.WithOutWriter(os.Stdout),
+)
 defer wr2.Close()
 
 fmt.Fprintln(wr1, "second writer")
 fmt.Fprintln(wr2, "second writer")
 // do something else ...
 
+```
+
+### Use flush function
+
+``` GO
+var writer bytes.Buffer
+safeWriter := linebyline.NewSafeWriter(&writer)
+
+wr1 := linebyline.NewByLineWriter(
+    linebyline.WithFlushFunc(func(bytes []byte) error {
+        print(string(bytes))
+        return nil
+    }),
+)
+defer wr1.Close()
+
+wr2 := linebyline.NewByLineWriter(
+    linebyline.WithFlushFunc(func(bytes []byte) error {
+        print(string(bytes))
+        return nil
+    }),
+)
+defer wr2.Close()
+
+fmt.Fprintln(wr1, "second writer")
+fmt.Fprintln(wr2, "second writer")
+// do something else ...
+```
+
+### Use custom end rune
+
+``` GO
+var writer bytes.Buffer
+safeWriter := linebyline.NewSafeWriter(&writer)
+
+wr1 := linebyline.NewByLineWriter(
+    linebyline.WithOutWriter(os.Stdout),
+    linebyline.WithEndRune('\t'),
+)
+defer wr1.Close()
+
+wr2 := linebyline.NewByLineWriter(
+    linebyline.WithOutWriter(os.Stdout),
+    linebyline.WithEndRune('\t'),
+)
+defer wr2.Close()
+
+fmt.Fprintln(wr1, "second writer\t")
+fmt.Fprintln(wr2, "second writer\t")
+// do something else ...
 ```
