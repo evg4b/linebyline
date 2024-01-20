@@ -90,12 +90,12 @@ var writer bytes.Buffer
 safeWriter := linebyline.NewSafeWriter(&writer)
 
 wr1 := linebyline.NewByLineWriter(
-    linebyline.WithOutWriter(os.Stdout),
+    linebyline.WithOutWriter(safeWriter),
 )
 defer wr1.Close()
 
 wr2 := linebyline.NewByLineWriter(
-    linebyline.WithOutWriter(os.Stdout),
+    linebyline.WithOutWriter(safeWriter),
 )
 defer wr2.Close()
 
@@ -108,9 +108,6 @@ fmt.Fprintln(wr2, "second writer")
 ### Use flush function
 
 ``` GO
-var writer bytes.Buffer
-safeWriter := linebyline.NewSafeWriter(&writer)
-
 wr1 := linebyline.NewByLineWriter(
     linebyline.WithFlushFunc(func(bytes []byte) error {
         print(string(bytes))
@@ -135,9 +132,6 @@ fmt.Fprintln(wr2, "second writer")
 ### Use custom end rune
 
 ``` GO
-var writer bytes.Buffer
-safeWriter := linebyline.NewSafeWriter(&writer)
-
 wr1 := linebyline.NewByLineWriter(
     linebyline.WithOutWriter(os.Stdout),
     linebyline.WithEndRune('\t'),
@@ -150,7 +144,27 @@ wr2 := linebyline.NewByLineWriter(
 )
 defer wr2.Close()
 
-fmt.Fprintln(wr1, "second writer\t")
-fmt.Fprintln(wr2, "second writer\t")
+fmt.Fprint(wr1, "second writer\t")
+fmt.Fprint(wr2, "second writer\t")
+// do something else ...
+```
+
+### Use custom end rune
+
+``` GO
+wr1 := linebyline.NewByLineWriter(
+    linebyline.WithOutWriter(os.Stdout),
+    linebyline.OmitNewLineRune(),
+)
+defer wr1.Close()
+
+wr2 := linebyline.NewByLineWriter(
+    linebyline.WithOutWriter(os.Stdout),
+    linebyline.OmitNewLineRune(),
+)
+defer wr2.Close()
+
+fmt.Fprintln(wr1, "second writer")
+fmt.Fprintln(wr2, "second writer")
 // do something else ...
 ```

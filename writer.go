@@ -6,9 +6,10 @@ import (
 )
 
 type byLineWriter struct {
-	buffer  bytes.Buffer
-	endRune byte
-	flushFn func([]byte) error
+	buffer          bytes.Buffer
+	endRune         byte
+	omitNewLineRune bool
+	flushFn         func([]byte) error
 }
 
 func NewByLineWriter(options ...Option) io.WriteCloser {
@@ -53,8 +54,10 @@ func (wr *byLineWriter) flush() error {
 	defer wr.buffer.Reset()
 
 	if wr.buffer.Len() > 0 {
-		if err := wr.buffer.WriteByte(wr.endRune); err != nil {
-			return err
+		if !wr.omitNewLineRune {
+			if err := wr.buffer.WriteByte(wr.endRune); err != nil {
+				return err
+			}
 		}
 
 		return wr.flushFn(wr.buffer.Bytes())

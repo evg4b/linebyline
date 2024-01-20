@@ -24,3 +24,9 @@ func WithEndRune(endRune rune) Option {
 		wr.endRune = byte(endRune)
 	}
 }
+
+func OmitNewLineRune() Option {
+	return func(wr *byLineWriter) {
+		wr.omitNewLineRune = true
+	}
+}

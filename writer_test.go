@@ -138,4 +138,26 @@ func TestByLineWriter(t *testing.T) {
 		assert.NoError(t, wr2.Close())
 		assert.Equal(t, []string{"wr2-data1\n", "wr2-data2\n", "wr2-data3\n", "wr1\n"}, items)
 	})
+
+	t.Run("Omit new line rune", func(t *testing.T) {
+		var writer bytes.Buffer
+
+		wr1 := linebyline.NewByLineWriter(
+			linebyline.WithOutWriter(&writer),
+			linebyline.OmitNewLineRune(),
+		)
+		wr2 := linebyline.NewByLineWriter(
+			linebyline.WithOutWriter(&writer),
+			linebyline.OmitNewLineRune(),
+		)
+
+		fmt.Fprint(wr1, "This is first")
+		fmt.Fprint(wr2, "This is second")
+		fmt.Fprint(wr1, " writer")
+		fmt.Fprint(wr2, " writer")
+
+		assert.NoError(t, wr1.Close())
+		assert.NoError(t, wr2.Close())
+		assert.Equal(t, "This is first writerThis is second writer", writer.String())
+	})
 }
