@@ -6,15 +6,25 @@ import (
 )
 
 type byLineWriter struct {
-	buffer bytes.Buffer
-	out    io.Writer
+	buffer  bytes.Buffer
+	endRune byte
+	flushFn func([]byte) error
 }
 
-func NewByLineWriter(out io.Writer) *byLineWriter {
-	return &byLineWriter{
-		buffer: bytes.Buffer{},
-		out:    out,
+func NewByLineWriter(options ...Option) io.WriteCloser {
+	rw := &byLineWriter{
+		buffer:  bytes.Buffer{},
+		endRune: '\n',
+		flushFn: func(bytes []byte) error {
+			return nil
+		},
 	}
+
+	for _, option := range options {
+		option(rw)
+	}
+
+	return rw
 }
 
 func (wr *byLineWriter) Close() error {
@@ -23,34 +33,31 @@ func (wr *byLineWriter) Close() error {
 
 func (wr *byLineWriter) Write(payload []byte) (int, error) {
 	for _, b := range payload {
-		if b == '\n' {
-			err := wr.flush()
-			if err != nil {
-				return 0, err
-			}
-		} else {
-			err := wr.buffer.WriteByte(b)
-			if err != nil {
-				return 0, err
-			}
+		if err := wr.writeByte(b); err != nil {
+			return 0, err
 		}
 	}
 
 	return len(payload), nil
 }
 
+func (wr *byLineWriter) writeByte(b byte) error {
+	if b == wr.endRune {
+		return wr.flush()
+	}
+
+	return wr.buffer.WriteByte(b)
+}
+
 func (wr *byLineWriter) flush() error {
 	defer wr.buffer.Reset()
 
 	if wr.buffer.Len() > 0 {
-		_, err := wr.buffer.WriteRune('\n')
-		if err != nil {
+		if err := wr.buffer.WriteByte(wr.endRune); err != nil {
 			return err
 		}
 
-		_, err = io.Copy(wr.out, &wr.buffer)
-
-		return err
+		return wr.flushFn(wr.buffer.Bytes())
 	}
 
 	return nil

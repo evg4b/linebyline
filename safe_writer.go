@@ -10,7 +10,7 @@ type safeWriter struct {
 	out io.Writer
 }
 
-func NewSafeWriter(out io.Writer) *safeWriter {
+func NewSafeWriter(out io.Writer) io.Writer {
 	return &safeWriter{
 		mu:  sync.Mutex{},
 		out: out,
